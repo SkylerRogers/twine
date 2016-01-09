@@ -268,10 +268,23 @@ Twine.bindingTypes =
   'bind-class': (node, context, definition) ->
     fn = wrapFunctionString(definition, '$context,$root', node)
     lastValue = {}
+    $node = $(node)
     return refresh: ->
       newValue = fn.call(node, context, rootContext)
-      for key, value of newValue when !lastValue[key] != !value
-        $(node).toggleClass(key, !!value)
+      additions = []
+      removals = []
+      for key, value of newValue
+        value = newValue[key] = !!newValue[key]
+        cached = lastValue[key]
+        if cached == undefined && $node.hasClass(key) != value || cached != value
+          if value
+            additions.push(key)
+          else
+            removals.push(key)
+      if removals.length
+        $node.removeClass(removals.join(' '))
+      if additions.length
+        $node.addClass(additions.join(' '))
       lastValue = newValue
 
   'bind-attribute': (node, context, definition) ->

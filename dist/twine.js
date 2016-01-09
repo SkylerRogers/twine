@@ -413,18 +413,32 @@ Twine.bindingTypes = {
     };
   },
   'bind-class': function(node, context, definition) {
-    var fn, lastValue;
+    var $node, fn, lastValue;
     fn = wrapFunctionString(definition, '$context,$root', node);
     lastValue = {};
+    $node = $(node);
     return {
       refresh: function() {
-        var key, newValue, value;
+        var additions, cached, key, newValue, removals, value;
         newValue = fn.call(node, context, rootContext);
+        additions = [];
+        removals = [];
         for (key in newValue) {
-          value = newValue[key];
-          if (!lastValue[key] !== !value) {
-            $(node).toggleClass(key, !!value);
+          value = newValue[key] = !!newValue[key];
+          cached = lastValue[key];
+          if (cached === void 0 && $node.hasClass(key) !== value || cached !== value) {
+            if (value) {
+              additions.push(key);
+            } else {
+              removals.push(key);
+            }
           }
+        }
+        if (removals.length) {
+          $node.removeClass(removals.join(' '));
+        }
+        if (additions.length) {
+          $node.addClass(additions.join(' '));
         }
         return lastValue = newValue;
       }
